@@ -1,6 +1,6 @@
 {
   "name": "orbit-db-identity-provider",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Default identity provider for OrbitDB",
   "main": "index.js",
   "scripts": {
@@ -59,6 +59,9 @@
     ]
   },
   "dependencies": {
+    "@polkadot/keyring": "^2.3.0-beta.1",
+    "@polkadot/util": "^2.3.0-beta.1",
+    "@polkadot/util-crypto": "^2.3.0-beta.1",
     "ethers": "^4.0.20",
     "orbit-db-keystore": "~0.3.4"
   },
