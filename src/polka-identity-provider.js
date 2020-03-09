@@ -1,14 +1,37 @@
 'use strict'
 
 const IdentityProvider = require('./identity-provider-interface');
-const { cryptoWaitReady, mnemonicGenerate, decodeAddress, schnorrkelVerify } = require('@polkadot/util-crypto');
+const { cryptoWaitReady, mnemonicGenerate, decodeAddress, schnorrkelVerify, encodeAddress } = require('@polkadot/util-crypto');
 const { Keyring } = require('@polkadot/keyring');
-const { u8aToHex } = require('@polkadot/util');
+const { u8aToHex, hexToU8a } = require('@polkadot/util');
+const createPair = require('@polkadot/keyring/pair').default;
 
 const SCHNORRKELL_TYPE = 'sr25519';
 const type = 'polka-sr25519'
 
 
+
+const restoreAccount = (json, password) => {
+    const type = Array.isArray(json.encoding.content) ? json.encoding.content[1] : 'ed25519';
+    const pair = createPair(
+        { toSS58: encodeAddress, type },
+        {
+            // FIXME Just for the transition period (ignoreChecksum)
+            publicKey: decodeAddress(json.address)
+        },
+        json.meta,
+        hexToU8a(json.encoded)
+    );
+
+
+    try {
+        pair.decodePkcs8(password);
+
+    } catch (error) {
+        console.log(error);
+    }
+    return pair;
+}
 
 class PolkaIdentityProvider extends IdentityProvider {
     constructor(options = {}) {
@@ -60,9 +83,12 @@ class PolkaIdentityProvider extends IdentityProvider {
             newWallet = keyring.addFromUri(options.mnemonicOpts.mnemonic, options.mnemonicOpts.path, SCHNORRKELL_TYPE);
         } else if (options.JsonOpts) {
             if (!options.JsonOpts.json) {
-                throw new Error(`Unencrypted json is required`)
+                throw new Error(`Encrypted json is required`)
             }
-            newWallet = keyring.addFromJson(options.JsonOpts.json)
+            if (!options.JsonOpts.password) {
+                throw new Error(`Password is required`)
+            }
+            newWallet = restoreAccount(options.JsonOpts.json, options.JsonOpts.password)
         }
         else {
             let privatekey = mnemonicGenerate(12);
